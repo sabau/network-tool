@@ -10,7 +10,7 @@ import (
 
 
 func sendResponse(conn *net.UDPConn, addr *net.UDPAddr) {
-	_,err := conn.WriteToUDP([]byte(fmt.Sprintf("QuiVIDEO UDP Port working: %d\n", addr.Port)), addr)
+	_,err := conn.WriteToUDP([]byte(fmt.Sprintf("QuiVIDEO: %d\n", addr.Port)), addr)
 	if err != nil {
 		fmt.Printf("Couldn't send response %v", err)
 	}
@@ -53,7 +53,7 @@ func Server(port int) {
 			continue
 		}
 		if (bytes.Contains(p, []byte("QuiVIDEO"))) {
-			fmt.Printf("Read from %v %s \n", remoteaddr, p)
+			fmt.Printf("%s \n", p)
 			go sendResponse(ServerConn, remoteaddr)
 		}
 	}
