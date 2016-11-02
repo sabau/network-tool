@@ -93,7 +93,7 @@ func clientUDP(ip string, port int) (bool, string) {
 		//	fmt.Printf("%s\n", p)
 		//}
 	} else {
-		return false, fmt.Sprintf("Receiving error %v\n", err)
+		return false, fmt.Sprintf("Receiving error %v", err)
 	}
 	conn.Close()
 	return true, ""
