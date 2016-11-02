@@ -69,7 +69,7 @@ func IperfCheck(iperfIp string, udpPorts []int){
 	close(updClosed)
 	close(errors)
 	for i := range updClosed {
-		fmt.Println("CLOSED PORT: " + string(i))
+		fmt.Printf("CLOSED PORT: %d\n",i)
 	}
 
 	for e := range errors {
