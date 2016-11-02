@@ -12,7 +12,7 @@ var (
 	portalPorts = []int{80, 443, 17992}
 	routerPorts = []int{443, 17990}
 	allTcpPorts = []int{80, 443, 1720, 17990, 17992}
-	iperfIp = "192.168.88.140"
+	iperfIp = "192.121.180.221"
 )
 
 func main(){
