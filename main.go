@@ -30,23 +30,24 @@ func main(){
 	}else {
 
 		var ip string
+		networkTools.IperfCheck(iperfIp, udpPorts)
 
 		ip = "192.121.180.132"
 		fmt.Printf("Portal: %s\n", ip)
-		networkTools.MachineCheck(ip, portalPorts, iperfIp, []int{})
+		networkTools.MachineCheck(ip, portalPorts, []int{})
 
 		ip = "192.121.180.133"
 		fmt.Printf("Router: %s\n", ip)
-		networkTools.MachineCheck(ip, routerPorts, iperfIp, udpPorts)
+		networkTools.MachineCheck(ip, routerPorts, udpPorts)
 
 		ip = "192.121.180.142"
 		fmt.Printf("Router: %s\n", ip)
-		networkTools.MachineCheck(ip, routerPorts, iperfIp, udpPorts)
+		networkTools.MachineCheck(ip, routerPorts, udpPorts)
 
 
 		ip = "192.121.180.132"
 		fmt.Printf("Gateway: %s\n", ip)
-		networkTools.MachineCheck(ip, allTcpPorts, iperfIp, []int{})
+		networkTools.MachineCheck(ip, allTcpPorts, []int{})
 	}
 	var input string
 	fmt.Println("\n\nPress enter to exit")
