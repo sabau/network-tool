@@ -17,7 +17,7 @@ var (
 )
 
 func main(){
-	fmt.Println("QuiVIDEO Connectivity check")
+	fmt.Println("QuiVIDEO Network-Health tool")
 	flag.Parse()
 
 
@@ -31,6 +31,7 @@ func main(){
 	}else {
 
 		var ip string
+		fmt.Println("Vidyo UDP media range analysis")
 		networkTools.IperfCheck(iperfIp, udpPorts)
 
 		ip = "192.121.180.132"
