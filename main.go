@@ -11,7 +11,8 @@ var (
 	udpPorts = []int{50000, 65535}
 	portalPorts = []int{80, 443, 17992}
 	routerPorts = []int{443, 17990}
-	allTcpPorts = []int{80, 443, 1720, 17990, 17992}
+	gatewayTcpPorts = []int{5060, 1720}
+	allTcpPorts = []int{80, 443, 1720, 5060, 17990, 17992}
 	iperfIp = "192.121.180.221"
 )
 
@@ -45,9 +46,9 @@ func main(){
 		networkTools.MachineCheck(ip, routerPorts, udpPorts)
 
 
-		ip = "192.121.180.132"
+		ip = "192.121.180.134"
 		fmt.Printf("Gateway: %s\n", ip)
-		networkTools.MachineCheck(ip, allTcpPorts, []int{})
+		networkTools.MachineCheck(ip, gatewayTcpPorts, udpPorts)
 	}
 	var input string
 	fmt.Println("\n\nPress enter to exit")
