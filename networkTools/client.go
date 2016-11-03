@@ -6,12 +6,11 @@ import (
 	"github.com/sabau/port-scanner"
 	"bufio"
 	"net"
-	//"bytes"
 	"math"
 	"sync"
 )
 var (
-	timeoutDuration = 1 * time.Second
+	timeoutDuration = 5 * time.Second
 )
 
 func MachineCheck(ip string, tcpPorts []int, udpPorts []int){
@@ -28,18 +27,22 @@ func MachineCheck(ip string, tcpPorts []int, udpPorts []int){
 	}
 
 	if len(udpPorts) > 0 {
-		updClosed := make(chan string)
+		updClosed := make(chan int, udpPorts[1] - udpPorts[0])
+		var wg sync.WaitGroup
 		for i := udpPorts[0]; i < udpPorts[1]; i++{
-			go func(i int, ps *portscanner.PortScanner) {
-				if !(ps.IsOpenUDP(i)){
-					updClosed <- " * CLOSED [ICMP] " + string(i)
-				} else {
-					updClosed <- ""
+			wg.Add(1)
+			go func(i int, ps *portscanner.PortScanner, c chan int) {
+				defer wg.Done()
+				if ! (ps.IsOpenUDP(i)) {
+					c <- i
 				}
-			}(i, ps)
+			} (i, ps, updClosed)
 		}
-		msg := <- updClosed
-		fmt.Println(msg)
+		wg.Wait()
+		close(updClosed)
+		for i := range updClosed {
+			fmt.Printf("ICMP CLOSED PORT: %d\n",i)
+		}
 	}
 }
 
@@ -48,9 +51,11 @@ func IperfCheck(iperfIp string, udpPorts []int){
 	//try with our server
 	updClosed := make(chan int, udpPorts[1] - udpPorts[0])
 	errors := make(chan string, udpPorts[1] - udpPorts[0])
-	for i := udpPorts[0]; i < udpPorts[1]; i+=1000 {
-		fmt.Printf("%d->%d", i, i + int(math.Min(float64(1000), float64(udpPorts[1]-i))))
-		for j := i; (j < i+1000) && j < udpPorts[1]; j++ {
+	step := 250
+	fmt.Printf("%d->", udpPorts[0])
+	for i := udpPorts[0]; i < udpPorts[1]; i+=step {
+		fmt.Printf("%d", i + int(math.Min(float64(step), float64(udpPorts[1]-i))))
+		for j := i; (j < i+step) && j < udpPorts[1]; j++ {
 			wg.Add(1)
 			go func(j int, iperfIp string, c chan int, e chan string) {
 				defer wg.Done()
@@ -61,20 +66,21 @@ func IperfCheck(iperfIp string, udpPorts []int){
 				if ! (ok) {
 					c <- j
 				}
-			}(j, iperfIp, updClosed, errors)
+			} (j, iperfIp, updClosed, errors)
 		}
 		wg.Wait()
-		fmt.Println(" DONE")
+		fmt.Print("->")
 	}
+	fmt.Println(" UDP Connectivity check DONE")
 	close(updClosed)
 	close(errors)
 	for i := range updClosed {
 		fmt.Printf("CLOSED PORT: %d\n",i)
 	}
 
-	for e := range errors {
-		fmt.Println("Error description: " + e)
-	}
+	//for e := range errors {
+	//	fmt.Println("Error description: " + e)
+	//}
 }
 
 func clientUDP(ip string, port int) (bool, string) {
@@ -85,14 +91,17 @@ func clientUDP(ip string, port int) (bool, string) {
 		return false, fmt.Sprintf("Dial Error:  %v", err)
 	}
 	fmt.Fprintf(conn, "QuiVIDEO %s:%d", ip, port)
-	reader := bufio.NewReader(conn)
 	conn.SetReadDeadline(time.Now().Add(timeoutDuration))
+
+	reader := bufio.NewReader(conn)
 	_, err = reader.Read(p)
+
 	if err == nil {
 		//if (! bytes.Contains(p, []byte("QuiVIDEO"))) {
 		//	fmt.Printf("%s\n", p)
 		//}
 	} else {
+
 		return false, fmt.Sprintf("Receiving error %v", err)
 	}
 	conn.Close()
