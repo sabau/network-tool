@@ -53,7 +53,7 @@ func Server(port int) {
 			continue
 		}
 		if (bytes.Contains(p, []byte("QuiVIDEO"))) {
-			fmt.Printf("%s \n", p)
+			//fmt.Printf("%s \n", p)
 			go sendResponse(ServerConn, remoteaddr)
 		}
 	}
