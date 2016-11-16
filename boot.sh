@@ -3,7 +3,7 @@
 sleep 1
 chvt 2
 
-backtitle='Sabau Configurator'
+backtitle='QuiVIDEO Configurator'
 exitstatus=0
 
 restart_services(){
@@ -130,6 +130,8 @@ set_net() {
     # plus static change that persist
     #######################################
 
+    /usr/bin/sudo sed -i.bak 's/BOOTPROTO=dhcp/BOOTPROTO=static/' /etc/sysconfig/network-scripts/ifcfg-eth0
+
     #update Hostname
     hostname=$(hostname)
     newhostname=$(whiptail --title "Set Hostname" --backtitle "$backtitle" --inputbox "Set your FQDN address" 30 60 ${hostname} 3>&1 1>&2 2>&3)
@@ -139,65 +141,39 @@ set_net() {
         return
     fi
     echo "New hostname will be " $newhostname
-    /usr/bin/sudo hostname $newhostname
+    /usr/bin/sudo hostnamectl set-hostname $newhostname
     /usr/bin/sudo sed -i "s*$hostname*$newhostname*" /etc/hostname
 
-    #update field IPADDR
-    ipaddr=$(hostname -I)
-    newip=$(whiptail --title "Set IP Address" --backtitle "$backtitle" --inputbox "Set your IP address" 30 60 ${ipaddr} 3>&1 1>&2 2>&3)
-    exit=$?
-    if [ ! $exit = 0 ]; then
-        echo "Canceled NEW IP HOST action"
-        return
-    fi
-    echo "New ip will be " $newip
-    /usr/bin/sudo sed -i "s*$ipaddr *$newip *" /etc/hosts
-    /usr/bin/sudo ifconfig ens160 $newip
-    /usr/bin/sudo sed -i ":begin;$!N;s/\($ipaddr\)\n/$newip\n/;tbegin;P;D" /etc/sysconfig/network-scripts/ifcfg-ens160
+    declare -A comp
+    comp[IPADDR]="Set your IP Address"
+    comp[GATEWAY]="Set your Gateway Address"
+    comp[PREFIX]="Set Netmask Prefix"
+    comp[DNS1]="Set DNS1 Address"
+    comp[DNS2]="Set DNS2 Address"
 
-    #update field NETMASK
-    ipaddr=$(/sbin/ifconfig ens160 | awk '/netmask /{ print $4;} ')
-    newip=$(whiptail --title "Set Netmask Address" --backtitle "$backtitle" --inputbox "Set your Netmask address" 30 60 ${ipaddr} 3>&1 1>&2 2>&3)
-    exit=$?
-    if [ ! ${exit} = 0 ]; then
-        echo "Canceled NEW NETMASK action"
-        return
-    fi
-    echo "New Netmask ip will be " ${newip}
-    /usr/bin/sudo sed -i ":begin;$!N;s/\($ipaddr\)\n/$newip\n/;tbegin;P;D" /etc/sysconfig/network-scripts/ifcfg-ens160
+    for i in "${!comp[@]}"
+    do
+      echo "key: $i: ${comp[$i]}"
 
-    #update field GATEWAY
-    ipaddr=$(/sbin/ip route | awk '/default/ { print $3 }')
-    newip=$(whiptail --title "Set Gateway Address" --backtitle "$backtitle" --inputbox "Set your Gateway address" 30 60 ${ipaddr} 3>&1 1>&2 2>&3)
-    exit=$?
-    if [ ! ${exit} = 0 ]; then
-        echo "Canceled NEW GW IP HOST action"
-        return
-    fi
-    echo "New Gateway ip will be " ${newip}
-    /usr/bin/sudo sed -i ":begin;$!N;s/\($ipaddr\)\n/$newip\n/;tbegin;P;D" /etc/sysconfig/network-scripts/ifcfg-ens160
+      ipaddr=$(grep -i $i /etc/sysconfig/network-scripts/ifcfg-eth0|awk -F= '{print $2}')
+      newip=$(whiptail --title "${comp[$i]}" --backtitle "$backtitle" --inputbox "${comp[$i]}" 30 60 ${ipaddr} 3>&1 1>&2 2>&3)
+      exit=$?
+      if [ ! $exit = 0 ]; then
+          echo "Canceled $i action"
+          /usr/bin/sudo rm -rf /etc/sysconfig/network-scripts/ifcfg-eth0
+          /usr/bin/sudo mv /etc/sysconfig/network-scripts/ifcfg-eth0.bak /etc/sysconfig/network-scripts/ifcfg-eth0
+          return
+      fi
+      echo "New $i will be " $newip
+      /usr/bin/sudo sed -i "s|^$ipaddr |^$newip |" /etc/hosts
+      if grep -Fq "$i" /etc/sysconfig/network-scripts/ifcfg-eth0
+      then
+          /usr/bin/sudo sed -i "s/$i.$ipaddr/$i=$newip/" /etc/sysconfig/network-scripts/ifcfg-eth0
+      else
+          /usr/bin/sudo echo "$i=$newip" >> /etc/sysconfig/network-scripts/ifcfg-eth0
+      fi
 
-    #update field DNS1
-    ipaddr=$(nmcli dev show ens160 | grep -i 'DNS.1' | awk '{print $2}')
-    newip=$(whiptail --title "Set DNS1 Address" --backtitle "$backtitle" --inputbox "Set your DNS1 address" 30 60 ${ipaddr} 3>&1 1>&2 2>&3)
-    exit=$?
-    if [ ! ${exit} = 0 ]; then
-        echo "Canceled NEW DNS1 IP HOST action"
-        return
-    fi
-    echo "New DNS1 will be " ${newip}
-    /usr/bin/sudo sed -i ":begin;$!N;s/\($ipaddr\)\n/$newip\n/;tbegin;P;D" /etc/sysconfig/network-scripts/ifcfg-ens160
-
-    #update field DNS2
-    ipaddr=$(nmcli dev show ens160 | grep -i 'DNS.2' | awk '{print $2}')
-    newip=$(whiptail --title "Set DNS2 Address" --backtitle "$backtitle" --inputbox "Set your DNS2 address" 30 60 ${ipaddr} 3>&1 1>&2 2>&3)
-    exit=$?
-    if [ ! ${exit} = 0 ]; then
-        echo "Canceled NEW DNS2 IP HOST action"
-        return
-    fi
-    echo "New DNS2 will be " ${newip}
-    /usr/bin/sudo sed -i ":begin;$!N;s/\($ipaddr\)\n/$newip\n/;tbegin;P;D" /etc/sysconfig/network-scripts/ifcfg-ens160
+    done
 
     #/etc/init.d/network restart
     /usr/bin/sudo systemctl restart network
@@ -208,7 +184,7 @@ set_net() {
 while [ ${exitstatus} = 0 ]
 do
 
-OPTION=$(whiptail --cancel-button "Quit" --title "Main Menu" --backtitle "$backtitle" --menu "Select which action you intend to do" 30 60 7 "1" "Set machine IP" "2" "Restart web services" "3" "Set dashboard server name" "4" "Update Dashboard license" "5" "Add Portal to dashboard" "6" "Show Dashboard License" "7" "Fetch Data"  3>&1 1>&2 2>&3)
+OPTION=$(whiptail --cancel-button "Quit" --title "QuiVIDEO Main Menu" --backtitle "$backtitle" --menu "Select which action you intend to do" 30 60 7 "1" "Set machine IP" "2" "Restart web services" "3" "Set dashboard server name" "4" "Update Dashboard license" "5" "Add Portal to dashboard" "6" "Show Dashboard License" "7" "Fetch Data"  3>&1 1>&2 2>&3)
 
 exitstatus=$?
 if [ ${exitstatus} = 0 ]; then
