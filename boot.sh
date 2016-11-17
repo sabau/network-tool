@@ -2,7 +2,7 @@
 
 sleep 1
 chvt 2
-
+clear
 backtitle='QuiVIDEO Configurator'
 exitstatus=0
 
@@ -132,6 +132,8 @@ set_net() {
 
     /usr/bin/sudo sed -i.bak 's/BOOTPROTO=dhcp/BOOTPROTO=static/' /etc/sysconfig/network-scripts/ifcfg-eth0
 
+    /usr/bin/sudo sed -i '/HWADDR=.*/d' /etc/sysconfig/network-scripts/ifcfg-eth0
+    /usr/bin/sudo sed -i '/UUID=.*/d' /etc/sysconfig/network-scripts/ifcfg-eth0
     #update Hostname
     hostname=$(hostname)
     newhostname=$(whiptail --title "Set Hostname" --backtitle "$backtitle" --inputbox "Set your FQDN address" 30 60 ${hostname} 3>&1 1>&2 2>&3)
