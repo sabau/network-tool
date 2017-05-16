@@ -57,7 +57,7 @@ func IperfCheck(iperfIp string, udpPorts []int, logger *log.Logger){
 	//try with our server
 	updClosed := make(chan int, udpPorts[1] - udpPorts[0])
 	errors := make(chan string, udpPorts[1] - udpPorts[0])
-	exp_increment := 1000
+	exp_increment := 5000
 	step := 250
 	fmt.Printf("%d->", udpPorts[0])
 	for i := udpPorts[0]; i < udpPorts[1]; i+=step {
@@ -79,9 +79,27 @@ func IperfCheck(iperfIp string, udpPorts []int, logger *log.Logger){
 		wg.Wait()
 		fmt.Print("->")
 		time.Sleep(500 * time.Millisecond)
-		if len(updClosed) >= init_length + step && i + step + exp_increment < udpPorts[1] {
-			i += exp_increment
-			exp_increment += exp_increment
+		if len(updClosed) >= init_length + step {
+			if i + step + exp_increment < udpPorts[1] {
+				i += exp_increment
+				//if exp_increment < 8001 {
+				//	exp_increment += exp_increment
+				//}
+			}else {
+				if i + step + exp_increment/2 < udpPorts[1] {
+					i += exp_increment/2
+					//if exp_increment < 8001 {
+					//	exp_increment += exp_increment
+					//}
+				}else {
+					if i + step + exp_increment/4 < udpPorts[1] {
+						i += exp_increment/4
+						//if exp_increment < 8001 {
+						//	exp_increment += exp_increment
+						//}
+					}
+				}
+			}
 		}
 	}
 	fmt.Println(" UDP Connectivity check DONE")
