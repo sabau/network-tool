@@ -8,14 +8,16 @@ import (
 	"net"
 	"math"
 	"sync"
+	"log"
 )
 var (
 	timeoutDuration = 5 * time.Second
 )
 
-func MachineCheck(ip string, tcpPorts []int, udpPorts []int){
+func MachineCheck(ip string, tcpPorts []int, udpPorts []int, logger *log.Logger){
 	ps := portscanner.NewPortScanner(ip, timeoutDuration)
 	fmt.Println("TCP Check, please wait.")
+	logger.Print("TCP Check, please wait.\r\n")
 	for i := 0; i < len(tcpPorts); i++ {
 		status := ""
 		if ps.IsOpen(tcpPorts[i]) {
@@ -24,6 +26,7 @@ func MachineCheck(ip string, tcpPorts []int, udpPorts []int){
 			status = "[Closed]"
 		}
 		fmt.Println(" ", tcpPorts[i], " ", status, "  -->  ", ps.DescribePort(tcpPorts[i]))
+		logger.Print(" ", tcpPorts[i], " ", status, "  -->  ", ps.DescribePort(tcpPorts[i]), "\r\n")
 	}
 
 	if len(udpPorts) > 0 {
@@ -42,11 +45,12 @@ func MachineCheck(ip string, tcpPorts []int, udpPorts []int){
 		close(updClosed)
 		for i := range updClosed {
 			fmt.Printf("ICMP CLOSED PORT: %d\n",i)
+			logger.Printf("ICMP CLOSED PORT: %d\r\n",i)
 		}
 	}
 }
 
-func IperfCheck(iperfIp string, udpPorts []int){
+func IperfCheck(iperfIp string, udpPorts []int, logger *log.Logger){
 	var wg sync.WaitGroup
 	//try with our server
 	updClosed := make(chan int, udpPorts[1] - udpPorts[0])
@@ -82,9 +86,12 @@ func IperfCheck(iperfIp string, udpPorts []int){
 	close(updClosed)
 	close(errors)
 	fmt.Print("CLOSED PORTS:")
+	logger.Print("CLOSED PORT: \r\n")
 	for i := range updClosed {
 		fmt.Printf(" %d",i)
+		logger.Printf(" %d", i)
 	}
+	logger.Print("\r\n")
 	fmt.Println("")
 
 	//for e := range errors {
