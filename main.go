@@ -41,7 +41,7 @@ func main(){
 
 	logger = log.New(errorlog, "applog: ", log.Lshortfile|log.LstdFlags)
 
-	logger.Print("QuiVIDEO Network-Health tool INIT")
+	logger.Print("QuiVIDEO Network-Health tool INIT\r\n")
 
 
 	flag.Parse()

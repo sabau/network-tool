@@ -9,6 +9,8 @@ import (
 	"math"
 	"sync"
 	"log"
+	"strconv"
+	"strings"
 )
 var (
 	timeoutDuration = 5 * time.Second
@@ -87,11 +89,12 @@ func IperfCheck(iperfIp string, udpPorts []int, logger *log.Logger){
 	close(errors)
 	fmt.Print("CLOSED PORTS:")
 	logger.Print("CLOSED PORT: \r\n")
+	s := []string{}
 	for i := range updClosed {
 		fmt.Printf(" %d",i)
-		logger.Printf(" %d", i)
+		s = append(s, strconv.Itoa(i))
 	}
-	logger.Print("\r\n")
+	logger.Print(strings.Join(s, " "), "\r\n")
 	fmt.Println("")
 
 	//for e := range errors {
